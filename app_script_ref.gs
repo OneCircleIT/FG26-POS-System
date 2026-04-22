@@ -210,15 +210,32 @@ function getItemsAndEntryIds() {
   };
 }
 
+function createApiOutput(payload, callback) {
+  if (callback) {
+    return ContentService
+      .createTextOutput(callback + "(" + JSON.stringify(payload) + ");")
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  return ContentService
+    .createTextOutput(JSON.stringify(payload))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function buildAuthResponse(passcode) {
+  if (passcode === "260502") {
+    return getItemsAndEntryIds();
+  }
+  return { error: "Incorrect password" };
+}
+
+function doGet(e) {
+  const params = (e && e.parameter) ? e.parameter : {};
+  const payload = buildAuthResponse(params.passcode);
+  return createApiOutput(payload, params.callback);
+}
+
 function doPost(e) {
   const params = JSON.parse(e.postData.contents || "{}");
-  if (params.passcode === "260502") {
-    return ContentService
-      .createTextOutput(JSON.stringify(getItemsAndEntryIds()))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-
-  return ContentService
-    .createTextOutput(JSON.stringify({ error: "Incorrect password" }))
-    .setMimeType(ContentService.MimeType.JSON);
+  const payload = buildAuthResponse(params.passcode);
+  return createApiOutput(payload, null);
 }

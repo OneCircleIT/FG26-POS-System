@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { loginSuccess, loginFailure, clearError, loginStart } from "../store/authSlice";
-import { API } from "../constant";
+import { requestCatalog } from "../utils/appScriptClient";
 
 const LoginPage = () => {
   const [passcode, setPasscode] = useState("");
@@ -15,32 +15,23 @@ const LoginPage = () => {
     dispatch(clearError());
   }, [dispatch]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     dispatch(loginStart());
-    fetch(API, {
-      redirect: "follow",
-      method: 'POST',
-      body: JSON.stringify({ passcode }),
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8',
-      },
-    })
-      .then(response => response.text())
-      .then(res => {
-        const data = JSON.parse(res);
-        console.log(data);
-        if (data?.success) {
-          dispatch(loginSuccess({
-            passcode: passcode,
-            ...data,
-          }));
-          navigate("/staff-name");
-        } else {
-          console.log(data);
-          dispatch(loginFailure("Invalid passcode. Please try again."));
-        }
-      });
+    try {
+      const data = await requestCatalog(passcode);
+      if (data?.success) {
+        dispatch(loginSuccess({
+          passcode: passcode,
+          ...data,
+        }));
+        navigate("/staff-name");
+      } else {
+        dispatch(loginFailure(data?.error || "Invalid passcode. Please try again."));
+      }
+    } catch (error) {
+      dispatch(loginFailure("Connection failed. Please retry."));
+    }
   };
 
   return (
@@ -61,6 +52,7 @@ const LoginPage = () => {
             <input
               type="password"
               id="passcode"
+              autoComplete="current-password"
               value={passcode}
               onChange={(e) => setPasscode(e.target.value)}
               placeholder="Enter passcode"

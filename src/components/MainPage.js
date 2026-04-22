@@ -5,11 +5,11 @@ import Item from "./Item";
 import ItemRow from "./ItemRow";
 import InvoiceEmailPopup from "./InvoiceEmailPopup";
 import LogoutPopUp from "./LogoutPopUp";
-import { API } from "../constant";
 import { loginSuccess, logout } from "../store/authSlice";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch } from '../store/hooks';
 import CheckoutPopup from "./CheckoutPopup";
+import { requestCatalog } from "../utils/appScriptClient";
 
 const MainPage = () => {
   const [cart, setCart] = useState({});
@@ -93,24 +93,18 @@ const MainPage = () => {
       return;
     }
     if ((!products || products.length === 0) && (!items || items.length === 0) && passcode) {
-      fetch(API, {
-        redirect: "follow",
-        method: 'POST',
-        body: JSON.stringify({ passcode }),
-        headers: {
-          "Content-Type": "text/plain;charset=utf-8",
-        },
-      })
-        .then(response => response.text())
-        .then(res => {
-          const data = JSON.parse(res);
-          if (data.success) {
+      requestCatalog(passcode)
+        .then((data) => {
+          if (data?.success) {
             dispatch(loginSuccess({
               ...data,
             }));
           } else {
             navigate('/login');
           }
+        })
+        .catch(() => {
+          navigate('/login');
         });
     } else if (!passcode) {
       navigate('/login');
