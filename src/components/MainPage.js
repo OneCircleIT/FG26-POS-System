@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useAppSelector } from "../store/hooks";
 import TopNavBar from "./TopNavBar";
 import Item from "./Item";
@@ -15,7 +15,7 @@ const MainPage = () => {
   const [cart, setCart] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'table'
-  const { staffName, staffNameEntryId, totalAmountEntryId, itemCountEntryId, invoiceEmailEntryId, paymentMethodEntryId, remarksEntryId, itemsEntryId, items, formSubmitUrl, passcode } = useAppSelector((state) => state.auth);
+  const { staffName, items, products, passcode } = useAppSelector((state) => state.auth);
   const [invoiceEmail, setInvoiceEmail] = useState('');
   const [showEmailPopup, setShowEmailPopup] = useState(false);
   const navigate = useNavigate();
@@ -23,6 +23,48 @@ const MainPage = () => {
   const [showLogoutPopup, setShowLogoutPopup] = useState(false);
   const [showCheckoutPopUp, setShowCheckoutPopUp] = useState(false);
 
+  const normalizedProducts = useMemo(() => {
+    if (products && products.length > 0) {
+      return products;
+    }
+
+    return (items || []).map((item, index) => ({
+      productId: `legacy-${item.id || index}`,
+      name: item.name,
+      image: item.image,
+      category: '',
+      displayOrder: index,
+      variants: [
+        {
+          variantId: item.id,
+          color: '',
+          size: '',
+          price: Number(item.price || 0),
+          stockQty: Number(item.stockQty || 0),
+          active: true,
+          trackStock: false,
+          allowBackorder: false,
+        },
+      ],
+    }));
+  }, [products, items]);
+
+  const [selectedVariantByProduct, setSelectedVariantByProduct] = useState({});
+
+  const variantIndex = useMemo(() => {
+    const map = {};
+    normalizedProducts.forEach((product) => {
+      (product.variants || []).forEach((variant) => {
+        map[variant.variantId] = {
+          ...variant,
+          productId: product.productId,
+          productName: product.name,
+          image: product.image,
+        };
+      });
+    });
+    return map;
+  }, [normalizedProducts]);
 
   const handleStaffNameClick = () => {
     setShowLogoutPopup(true);
@@ -47,10 +89,10 @@ const MainPage = () => {
 
 
   useEffect(() => {
-    if (items.length > 0) {
+    if ((products && products.length > 0) || (items && items.length > 0)) {
       return;
     }
-    if (items.length === 0 && passcode) {
+    if ((!products || products.length === 0) && (!items || items.length === 0) && passcode) {
       fetch(API, {
         redirect: "follow",
         method: 'POST',
@@ -74,29 +116,68 @@ const MainPage = () => {
       navigate('/login');
     }
     // eslint-disable-next-line
-  }, [items]);
+  }, [items, products, passcode]);
+
+  useEffect(() => {
+    setSelectedVariantByProduct((prev) => {
+      const next = { ...prev };
+      normalizedProducts.forEach((product) => {
+        const activeVariants = (product.variants || []).filter((variant) => variant.active !== false);
+        if (activeVariants.length === 0) {
+          return;
+        }
+        const previousVariantId = prev[product.productId];
+        const hasPreviousStillValid = activeVariants.some((variant) => variant.variantId === previousVariantId);
+        if (!hasPreviousStillValid) {
+          next[product.productId] = activeVariants[0].variantId;
+        }
+      });
+      return next;
+    });
+  }, [normalizedProducts]);
 
   // Calculate total and item count
-  const total = Object.entries(cart).reduce((sum, [itemId, quantity]) => {
-    const item = items.find(item => item.id === itemId);
-    return sum + (item ? item.price * quantity : 0);
+  const total = Object.entries(cart).reduce((sum, [variantId, quantity]) => {
+    const variant = variantIndex[variantId];
+    return sum + (variant ? Number(variant.price || 0) * quantity : 0);
   }, 0);
 
   const itemCount = Object.values(cart).reduce((sum, quantity) => sum + quantity, 0);
 
   // Format cart items for display
   const cartItems = Object.entries(cart)
-    .filter(([itemId, quantity]) => quantity > 0)
-    .map(([itemId, quantity]) => {
-      const item = items.find(item => item.id === itemId);
-      return item ? { ...item, quantity } : null;
+    .filter(([, quantity]) => quantity > 0)
+    .map(([variantId, quantity]) => {
+      const variant = variantIndex[variantId];
+      if (!variant) {
+        return null;
+      }
+      const variantLabel = [variant.color, variant.size].filter(Boolean).join(" / ");
+      return {
+        id: variant.variantId,
+        variantId: variant.variantId,
+        productId: variant.productId,
+        name: variantLabel ? `${variant.productName} (${variantLabel})` : variant.productName,
+        productName: variant.productName,
+        variantLabel,
+        price: Number(variant.price || 0),
+        quantity,
+        stockQty: Number(variant.stockQty || 0),
+      };
     })
     .filter(Boolean);
 
-  const handleQuantityChange = (itemId, newQuantity) => {
+  const handleQuantityChange = (variantId, newQuantity) => {
     setCart(prev => ({
       ...prev,
-      [itemId]: newQuantity
+      [variantId]: Math.max(0, Number(newQuantity) || 0)
+    }));
+  };
+
+  const handleVariantChange = (productId, variantId) => {
+    setSelectedVariantByProduct((prev) => ({
+      ...prev,
+      [productId]: variantId,
     }));
   };
 
@@ -171,11 +252,13 @@ const MainPage = () => {
       
       {viewMode === 'grid' ? (
         <div className="items-grid grid grid-cols-4 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 gap-1 max-w-5xl mx-auto px-2 pb-8">
-          {items.map(item => (
+          {normalizedProducts.map(product => (
             <Item
-              key={item.id}
-              item={item}
-              quantity={cart[item.id] || 0}
+              key={product.productId}
+              product={product}
+              selectedVariantId={selectedVariantByProduct[product.productId]}
+              quantity={cart[selectedVariantByProduct[product.productId]] || 0}
+              onVariantChange={handleVariantChange}
               onQuantityChange={handleQuantityChange}
             />
           ))}
@@ -184,11 +267,13 @@ const MainPage = () => {
         <div className="items-table-container max-w-5xl mx-auto px-2 pb-8">
           <table className="items-table w-full border border-gray-200  bg-primary shadow-sm">
             <tbody>
-              {items.map(item => (
+              {normalizedProducts.map(product => (
                 <ItemRow
-                  key={item.id}
-                  item={item}
-                  quantity={cart[item.id] || 0}
+                  key={product.productId}
+                  product={product}
+                  selectedVariantId={selectedVariantByProduct[product.productId]}
+                  quantity={cart[selectedVariantByProduct[product.productId]] || 0}
+                  onVariantChange={handleVariantChange}
                   onQuantityChange={handleQuantityChange}
                 />
               ))}
@@ -220,13 +305,7 @@ const MainPage = () => {
         onClose={onCancelCheckout}
         total={total}
         itemCount={itemCount}
-        cartItems={items
-          .filter(item => cart[item.id] > 0)
-          .map(item => ({
-            ...item,
-            quantity: cart[item.id]
-          }))
-        }
+        cartItems={cartItems}
         onClearContents={onClearContents}
         invoiceEmail={invoiceEmail}
         onInvoiceEmailChange={setInvoiceEmail}

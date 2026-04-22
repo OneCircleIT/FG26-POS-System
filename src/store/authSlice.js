@@ -6,6 +6,8 @@ const initialState = {
   isLoading: false,
   error: null,
   items: [],
+  products: [],
+  catalogVersion: '',
   formSubmitUrl: '',
   staffNameEntryId: null,
   totalAmountEntryId: null,
@@ -13,6 +15,7 @@ const initialState = {
   invoiceEmailEntryId: null,
   paymentMethodEntryId: null,
   itemsEntryId: null,
+  remarksEntryId: null,
   passcode: Cookies.get('passcode') || '',
 };
 
@@ -33,6 +36,8 @@ const authSlice = createSlice({
         Cookies.set('passcode', action.payload.passcode, { expires: 1 });
       }
       state.items = action.payload.items;
+      state.products = action.payload.products || [];
+      state.catalogVersion = action.payload.catalogVersion || '';
       state.formSubmitUrl = action.payload.formSubmitUrl;
       state.staffNameEntryId = action.payload.staffNameEntryId;
       state.totalAmountEntryId = action.payload.totalAmountEntryId;

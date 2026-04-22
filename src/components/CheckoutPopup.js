@@ -109,18 +109,21 @@ const CheckoutPopup = ({
         if (remarksEntryId) {
           addField(`entry.${remarksEntryId}`, remarks);
         }
-        let itemStr = "";
+        const lineItems = [];
         if (cartItems && cartItems.length > 0) {
           cartItems.forEach((item) => {
-            addField(`entry.${item.id}`, item.quantity);
-            itemStr += `${item.name} x${item.quantity} - $${(
-              item.price * item.quantity
-            ).toFixed(2)}`;
+            const token = `${item.variantId || item.id} x${item.quantity} @${Number(item.price || 0).toFixed(2)}`;
+            const label = item.variantLabel
+              ? `${item.productName} (${item.variantLabel})`
+              : item.name;
+            lineItems.push(
+              `${label} x${item.quantity} - $${(Number(item.price || 0) * item.quantity).toFixed(2)} | ${token}`
+            );
           });
         }
 
         if (itemsEntryId) {
-          addField(`entry.${itemsEntryId}`, itemStr);
+          addField(`entry.${itemsEntryId}`, lineItems.join("\n"));
         }
 
         document.body.appendChild(form);

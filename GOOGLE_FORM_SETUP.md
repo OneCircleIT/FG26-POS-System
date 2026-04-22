@@ -48,6 +48,37 @@ For more precise form submission, you can get the entry IDs:
 5. Submit the order
 6. Check your Google Form responses
 
+## 6. Variant Catalog Setup (Products Sheet)
+
+For variant products (e.g., T-shirt with color/size), keep Google Form for order capture and use a linked Google Sheet tab named `Products` as product catalog.
+
+1. Open the Google Sheet linked to your form responses
+2. Create a sheet named `Products`
+3. Add header row with these columns:
+   - `productId`
+   - `productName`
+   - `image`
+   - `category`
+   - `displayOrder`
+   - `variantId`
+   - `color`
+   - `size`
+   - `price`
+   - `stockQty`
+   - `active`
+   - `trackStock` (optional, future use)
+   - `allowBackorder` (optional, future use)
+4. Add one row per variant
+   - Example:
+     - `TSHIRT`, `T-Shirt`, `<image-url>`, `Apparel`, `1`, `TSHIRT-BLK-M`, `Black`, `M`, `120`, `10`, `TRUE`
+     - `TSHIRT`, `T-Shirt`, `<image-url>`, `Apparel`, `1`, `TSHIRT-WHT-L`, `White`, `L`, `120`, `8`, `TRUE`
+
+Current behavior:
+- POS reads products/variants from `Products` sheet through Apps Script.
+- Checkout still writes to Google Form.
+- Variant lines are submitted in `itemsEntryId` as text lines (for example `T-Shirt (Black / M) x2 - $240.00 | TSHIRT-BLK-M x2 @120.00`).
+- `stockQty` is displayed in UI only (no stock deduction yet).
+
 ## Current Implementation
 
 The current implementation simulates the form submission. To enable real Google Form submission, uncomment the fetch code in the `handleSubmit` function in `MainPage.js`.

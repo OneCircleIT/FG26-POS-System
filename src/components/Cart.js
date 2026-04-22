@@ -17,11 +17,11 @@ const Cart = ({ cartItems }) => {
             ) : (
               cartItems.map((item) => (
                 <li
-                  key={item.id}
+                  key={item.variantId || item.id}
                   className="flex justify-between text-white text-xs py-1 border-b border-primary-light last:border-b-0"
                 >
-                  <div class="flex flex-row">
-                    <span class="min-w-[20px]">{item.quantity}x</span>
+                  <div className="flex flex-row">
+                    <span className="min-w-[20px]">{item.quantity}x</span>
                     <span>{item.name}</span>
                   </div>
                   <span>${(item.price * item.quantity).toFixed(2)}</span>
