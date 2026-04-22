@@ -48,7 +48,7 @@ const LoginPage = () => {
       <div className="w-full max-w-sm bg-primary p-8">
         <div className="flex flex-row items-center justify-center">
           <img src="./onecircle-144.png" className="w-[80px] mb-8" />
-          <h1 className="text-2xl font-bold text-center text-white mb-6">POS System Login</h1>
+          <h1 className="text-2xl font-bold text-center text-white mb-6">Facing GOD 2026 - POS System Login</h1>
         </div>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
