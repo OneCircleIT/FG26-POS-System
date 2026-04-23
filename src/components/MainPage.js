@@ -24,29 +24,69 @@ const MainPage = () => {
   const [showCheckoutPopUp, setShowCheckoutPopUp] = useState(false);
 
   const normalizedProducts = useMemo(() => {
-    if (products && products.length > 0) {
-      return products;
-    }
+    const source = (products && products.length > 0)
+      ? products
+      : (items || []).map((item, index) => ({
+          productId: `legacy-${item.id || index}`,
+          name: item.name,
+          image: item.image,
+          category: '',
+          displayOrder: index,
+          variants: [
+            {
+              variantId: item.id,
+              color: '',
+              size: '',
+              price: Number(item.price || 0),
+              stockQty: Number(item.stockQty || 0),
+              active: true,
+              trackStock: false,
+              allowBackorder: false,
+            },
+          ],
+        }));
 
-    return (items || []).map((item, index) => ({
-      productId: `legacy-${item.id || index}`,
-      name: item.name,
-      image: item.image,
-      category: '',
-      displayOrder: index,
-      variants: [
-        {
-          variantId: item.id,
-          color: '',
-          size: '',
-          price: Number(item.price || 0),
-          stockQty: Number(item.stockQty || 0),
-          active: true,
-          trackStock: false,
-          allowBackorder: false,
-        },
-      ],
-    }));
+    const seenProductIds = new Set();
+    const seenVariantIds = new Set();
+
+    return source.map((product, productIdx) => {
+      let rawProductId = product.productId ? String(product.productId).trim() : '';
+      if (!rawProductId) {
+        rawProductId = `product-${productIdx}`;
+      }
+      let productId = rawProductId;
+      let productSuffix = 1;
+      while (seenProductIds.has(productId)) {
+        productId = `${rawProductId}-${productSuffix}`;
+        productSuffix += 1;
+      }
+      seenProductIds.add(productId);
+
+      const variants = (product.variants || []).map((variant, variantIdx) => {
+        let rawVariantId = variant.variantId ? String(variant.variantId).trim() : '';
+        if (!rawVariantId) {
+          rawVariantId = `${productId}-v${variantIdx}`;
+        }
+        let variantId = rawVariantId;
+        let variantSuffix = 1;
+        while (seenVariantIds.has(variantId)) {
+          variantId = `${rawVariantId}-${variantSuffix}`;
+          variantSuffix += 1;
+        }
+        seenVariantIds.add(variantId);
+
+        return {
+          ...variant,
+          variantId,
+        };
+      });
+
+      return {
+        ...product,
+        productId,
+        variants,
+      };
+    });
   }, [products, items]);
 
   const [selectedVariantByProduct, setSelectedVariantByProduct] = useState({});

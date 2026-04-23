@@ -24,6 +24,9 @@ const ItemRow = ({
   if (!selectedVariant) {
     return null;
   }
+  const hasVariantAttributes = variants.some((variant) => variant.color || variant.size);
+  const showVariantSelector = variants.length > 1 && hasVariantAttributes;
+  const showStockBadge = Number(selectedVariant.stockQty || 0) > 0;
 
   const handleIncrement = () => {
     onQuantityChange(selectedVariant.variantId, quantity + 1);
@@ -48,19 +51,23 @@ const ItemRow = ({
       <td className="px-1 py-2">
         <div className="font-bold">{product.name}</div>
         <div className="flex items-center gap-2 mt-1">
-          <select
-            className="text-xs bg-white border border-gray-300 text-gray-700 px-1 py-1"
-            value={selectedVariant.variantId}
-            onChange={(e) => onVariantChange(product.productId, e.target.value)}
-          >
-            {variants.map((variant) => (
-              <option key={variant.variantId} value={variant.variantId}>
-                {buildVariantLabel(variant)}
-              </option>
-            ))}
-          </select>
+          {showVariantSelector && (
+            <select
+              className="text-xs bg-white border border-gray-300 text-gray-700 px-1 py-1"
+              value={selectedVariant.variantId}
+              onChange={(e) => onVariantChange(product.productId, e.target.value)}
+            >
+              {variants.map((variant) => (
+                <option key={variant.variantId} value={variant.variantId}>
+                  {buildVariantLabel(variant)}
+                </option>
+              ))}
+            </select>
+          )}
           <div className="text-gray-400 ml-2">${Number(selectedVariant.price || 0).toFixed(2)}</div>
-          <div className="text-[10px] text-gray-500">Stock: {Number(selectedVariant.stockQty || 0)}</div>
+          {showStockBadge && (
+            <div className="text-[10px] text-gray-500">Stock: {Number(selectedVariant.stockQty || 0)}</div>
+          )}
         </div>
       </td>
       <td className="px-1 py-2">
