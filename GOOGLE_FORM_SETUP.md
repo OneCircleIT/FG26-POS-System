@@ -66,12 +66,14 @@ For variant products (e.g., T-shirt with color/size), keep Google Form for order
    - `price`
    - `stockQty`
    - `active`
+   - `variantName` (optional, per-variant display name override; falls back to `productName` if empty)
+   - `variantImage` (optional, per-variant image URL; falls back to product `image` if empty)
    - `trackStock` (optional, future use)
    - `allowBackorder` (optional, future use)
 4. Add one row per variant
    - Example:
-     - `TSHIRT`, `T-Shirt`, `<image-url>`, `Apparel`, `1`, `TSHIRT-BLK-M`, `Black`, `M`, `120`, `10`, `TRUE`
-     - `TSHIRT`, `T-Shirt`, `<image-url>`, `Apparel`, `1`, `TSHIRT-WHT-L`, `White`, `L`, `120`, `8`, `TRUE`
+     - `TSHIRT`, `T-Shirt`, `<image-url>`, `Apparel`, `1`, `TSHIRT-BLK-M`, `Black`, `M`, `120`, `10`, `TRUE`, `<black-image-url>`
+     - `TSHIRT`, `T-Shirt`, `<image-url>`, `Apparel`, `1`, `TSHIRT-WHT-L`, `White`, `L`, `120`, `8`, `TRUE`, `<white-image-url>`
 
 Current behavior:
 - POS reads products/variants from `Products` sheet through Apps Script.

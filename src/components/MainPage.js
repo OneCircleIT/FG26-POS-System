@@ -98,8 +98,8 @@ const MainPage = () => {
         map[variant.variantId] = {
           ...variant,
           productId: product.productId,
-          productName: product.name,
-          image: product.image,
+          productName: variant.name || product.name,
+          image: variant.image || product.image,
         };
       });
     });

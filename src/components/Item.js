@@ -27,6 +27,8 @@ const Item = ({
   const hasVariantAttributes = variants.some((variant) => variant.color || variant.size);
   const showVariantSelector = variants.length > 1 && hasVariantAttributes;
   const showStockBadge = Number(selectedVariant.stockQty || 0) > 0;
+  const displayImage = selectedVariant.image || product.image;
+  const displayName = selectedVariant.name || product.name;
 
   const handleIncrement = () => {
     onQuantityChange(selectedVariant.variantId, quantity + 1);
@@ -55,13 +57,13 @@ const Item = ({
       <div className="w-full h-[120px] bg-primary overflow-hidden flex items-center justify-center">
         <img
           onClick={handleImageClick}
-          src={product.image}
-          alt={product.name}
+          src={displayImage}
+          alt={displayName}
           className="w-full h-full object-cover cursor-pointer"
         />
       </div>
       <div className="p-1 flex-1 flex flex-col justify-between">
-        <h3 className="text-xs font-semibold text-gray-800 m-0 leading-tight">{product.name}</h3>
+        <h3 className="text-xs font-semibold text-gray-800 m-0 leading-tight">{displayName}</h3>
         {showVariantSelector && (
           <select
             className="mt-1 text-xs bg-white border border-gray-300 text-gray-700 px-1 py-1"

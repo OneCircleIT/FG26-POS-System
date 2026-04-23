@@ -177,8 +177,14 @@ function buildCatalogFromProductsSheet() {
       [productId, toSlug(color), toSlug(size), rowIndex].filter(Boolean).join("-")
     ).trim();
 
+    const variantImage = String(
+      row[idx.variantimage] || row[idx.variantimageurl] || ""
+    ).trim();
+    const variantName = String(row[idx.variantname] || "").trim();
+
     const variant = {
       variantId: variantId,
+      name: variantName,
       color: color,
       size: size,
       price: parseNumber(row[idx.price], 0),
@@ -186,6 +192,7 @@ function buildCatalogFromProductsSheet() {
       active: parseBoolean(row[idx.active], true),
       trackStock: parseBoolean(row[idx.trackstock], false),
       allowBackorder: parseBoolean(row[idx.allowbackorder], false),
+      image: variantImage,
     };
 
     if (!productsById[productId]) {
@@ -211,7 +218,7 @@ function getLegacyItemsFromProducts(products) {
   const items = [];
   products.forEach((product) => {
     (product.variants || []).forEach((variant) => {
-      const labelParts = [product.name];
+      const labelParts = [variant.name || product.name];
       if (variant.color) {
         labelParts.push(variant.color);
       }
@@ -222,7 +229,7 @@ function getLegacyItemsFromProducts(products) {
         id: variant.variantId,
         name: labelParts.join(" - "),
         price: parseNumber(variant.price, 0),
-        image: product.image || "",
+        image: variant.image || product.image || "",
         stockQty: parseNumber(variant.stockQty, 0),
       });
     });
