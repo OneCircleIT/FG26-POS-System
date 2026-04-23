@@ -79,6 +79,38 @@ Current behavior:
 - Variant lines are submitted in `itemsEntryId` as text lines (for example `T-Shirt (Black / M) x2 - $240.00 | TSHIRT-BLK-M x2 @120.00`).
 - `stockQty` is displayed in UI only (no stock deduction yet).
 
+## 7. Per-Item (Variant) Form Questions
+
+You can add one Google Form question per variant so each item's purchased quantity is recorded in its own column.
+
+### Convention
+
+In each per-item question's **title**, embed the `variantId` wrapped with `[#...]` as a marker. Apps Script uses this marker to map the question to the variant.
+
+Examples (title text in the form):
+- `T-Shirt Black M [#TSHIRT-BLK-M]`
+- `Tote Bag [#TOTE-BAG]`
+- `Mug Red [#MUG-RED]`
+
+Rules:
+- Use **Short answer** question type (value submitted will be the integer quantity).
+- The marker is case-insensitive and must match the `variantId` column from the `Products` sheet.
+- Fallback plain-hash form like `#TSHIRT-BLK-M` also works if no bracketed marker is present.
+- Questions without a marker are ignored for per-item mapping (they can still be used for other data).
+
+### How it works
+
+On checkout:
+1. Apps Script builds a `variantEntryIds` map (`{ variantId: entryId }`) by scanning form titles for the marker.
+2. The client submits the purchased **quantity** to `entry.<entryId>` for every cart item that has a mapped question.
+3. The existing aggregated `items` text field is still submitted for a human-readable summary.
+
+### Adding a new product variant
+
+1. Add a row in the `Products` sheet with a unique `variantId`.
+2. Add a new form question whose title contains `[#<variantId>]`.
+3. Re-login to the POS (the catalog and entry-ID map are fetched at login).
+
 ## Current Implementation
 
 The current implementation simulates the form submission. To enable real Google Form submission, uncomment the fetch code in the `handleSubmit` function in `MainPage.js`.

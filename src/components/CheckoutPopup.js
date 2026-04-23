@@ -26,6 +26,7 @@ const CheckoutPopup = ({
     paymentMethodEntryId,
     remarksEntryId,
     itemsEntryId,
+    variantEntryIds,
     items,
     formSubmitUrl,
     passcode,
@@ -110,15 +111,22 @@ const CheckoutPopup = ({
           addField(`entry.${remarksEntryId}`, remarks);
         }
         const lineItems = [];
+        const variantEntryMap = variantEntryIds || {};
         if (cartItems && cartItems.length > 0) {
           cartItems.forEach((item) => {
-            const token = `${item.variantId || item.id} x${item.quantity} @${Number(item.price || 0).toFixed(2)}`;
+            const variantId = item.variantId || item.id;
+            const token = `${variantId} x${item.quantity} @${Number(item.price || 0).toFixed(2)}`;
             const label = item.variantLabel
               ? `${item.productName} (${item.variantLabel})`
               : item.name;
             lineItems.push(
               `${label} x${item.quantity} - $${(Number(item.price || 0) * item.quantity).toFixed(2)} | ${token}`
             );
+
+            const perItemEntryId = variantEntryMap[variantId];
+            if (perItemEntryId && Number(item.quantity) > 0) {
+              addField(`entry.${perItemEntryId}`, item.quantity);
+            }
           });
         }
 

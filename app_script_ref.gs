@@ -70,6 +70,54 @@ function findEntryId(formData, text) {
   return found[4][0][0];
 }
 
+// Match a form question to a variant by scanning the question title
+// for a marker like "[#VARIANTID]" or "#VARIANTID" (case-insensitive).
+// Returns a map: { variantId: entryId }
+function findVariantEntryIds(formData, products) {
+  const questions = formData && formData[1] && formData[1][1] ? formData[1][1] : [];
+  const map = {};
+  if (!Array.isArray(products) || products.length === 0) {
+    return map;
+  }
+
+  // Build a quick lookup: normalized variantId -> original variantId
+  const variantLookup = {};
+  products.forEach((product) => {
+    (product.variants || []).forEach((variant) => {
+      const vid = String(variant.variantId || "").trim();
+      if (!vid) return;
+      variantLookup[vid.toLowerCase()] = vid;
+    });
+  });
+
+  questions.forEach((q) => {
+    if (!q || !q[1] || !q[4] || !q[4][0]) return;
+    const title = String(q[1]).toLowerCase();
+    const entryId = q[4][0][0];
+
+    // Prefer explicit bracket marker [#variantId]
+    const bracketMatch = title.match(/\[#\s*([a-z0-9][a-z0-9\-_]*)\s*\]/i);
+    if (bracketMatch) {
+      const key = bracketMatch[1].toLowerCase();
+      if (variantLookup[key] && !map[variantLookup[key]]) {
+        map[variantLookup[key]] = entryId;
+        return;
+      }
+    }
+
+    // Fallback: plain "#variantId" token anywhere in title
+    const hashMatch = title.match(/#\s*([a-z0-9][a-z0-9\-_]*)/i);
+    if (hashMatch) {
+      const key = hashMatch[1].toLowerCase();
+      if (variantLookup[key] && !map[variantLookup[key]]) {
+        map[variantLookup[key]] = entryId;
+      }
+    }
+  });
+
+  return map;
+}
+
 function getFormPublicData() {
   const res = UrlFetchApp.fetch(FORM_VIEW_URL);
   const content = res.getContentText();
@@ -221,6 +269,7 @@ function getItemsAndEntryIds() {
     invoiceEmailEntryId: findEntryId(formData, "invoice email"),
     itemsEntryId: findEntryId(formData, "items"),
     remarksEntryId: findEntryId(formData, "remarks"),
+    variantEntryIds: findVariantEntryIds(formData, products),
   };
 }
 
