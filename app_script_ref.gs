@@ -1,6 +1,9 @@
 const FORM_VIEW_URL = "https://docs.google.com/forms/d/e/1FAIpQLScxBqBa9_xe53w68ef0rh6CPG2zdgwvvQIDaC4JOYWQx1fHJg/viewform";
 const FORM_SUBMIT_URL = "https://docs.google.com/forms/d/e/1FAIpQLScxBqBa9_xe53w68ef0rh6CPG2zdgwvvQIDaC4JOYWQx1fHJg/formResponse";
 const PRODUCTS_SHEET_NAME = "Products";
+// Optional: set this to bypass FormApp.openByUrl permission/deleted-form issues.
+// Example: const PRODUCTS_SPREADSHEET_ID = "1AbCdEf...";
+const PRODUCTS_SPREADSHEET_ID = "";
 
 function extractFBData(html) {
   const regex = /var FB_PUBLIC_LOAD_DATA_ .*?<\/script>/s;
@@ -78,13 +81,18 @@ function getFormPublicData() {
 }
 
 function buildCatalogFromProductsSheet() {
-  const form = FormApp.openByUrl(FORM_VIEW_URL);
-  const spreadsheetId = form.getDestinationId();
-  if (!spreadsheetId) {
-    return [];
+  let spreadsheet = null;
+  if (PRODUCTS_SPREADSHEET_ID) {
+    spreadsheet = SpreadsheetApp.openById(PRODUCTS_SPREADSHEET_ID);
+  } else {
+    const form = FormApp.openByUrl(FORM_VIEW_URL);
+    const spreadsheetId = form.getDestinationId();
+    if (!spreadsheetId) {
+      return [];
+    }
+    spreadsheet = SpreadsheetApp.openById(spreadsheetId);
   }
 
-  const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
   const sheet = spreadsheet.getSheetByName(PRODUCTS_SHEET_NAME);
   if (!sheet) {
     return [];
@@ -189,7 +197,13 @@ function getLegacyItemsFromFormData(formData) {
 
 function getItemsAndEntryIds() {
   const formData = getFormPublicData();
-  const products = buildCatalogFromProductsSheet();
+  let products = [];
+  try {
+    products = buildCatalogFromProductsSheet();
+  } catch (error) {
+    // Do not block login when catalog sheet is unavailable or inaccessible.
+    products = [];
+  }
   const compatibilityItems = products.length > 0
     ? getLegacyItemsFromProducts(products)
     : getLegacyItemsFromFormData(formData);
