@@ -68,7 +68,7 @@ For variant products (e.g., T-shirt with color/size), keep Google Form for order
    - `active`
    - `variantName` (optional, per-variant display name override; falls back to `productName` if empty)
    - `variantImage` (optional, per-variant image URL; falls back to product `image` if empty)
-   - `trackStock` (optional, future use)
+   - `trackStock` (ignored; inventory tracking is controlled by `stockQty`)
    - `allowBackorder` (optional, future use)
 4. Add one row per variant
    - Example:
@@ -79,7 +79,8 @@ Current behavior:
 - POS reads products/variants from `Products` sheet through Apps Script.
 - Checkout still writes to Google Form.
 - Variant lines are submitted in `itemsEntryId` as text lines (for example `T-Shirt (Black / M) x2 - $240.00 | TSHIRT-BLK-M x2 @120.00`).
-- `stockQty` is displayed in UI only (no stock deduction yet).
+- Blank `stockQty` means inventory is not tracked for that variant.
+- Numeric `stockQty` means inventory is tracked, deducted after checkout, and blocks purchase when it reaches `0`.
 
 ## 7. Per-Item (Variant) Form Questions
 

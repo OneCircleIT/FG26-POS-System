@@ -34,8 +34,19 @@ function parseNumber(value, fallback) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function isBlankValue(value) {
+  return value === null || typeof value === "undefined" || String(value).trim() === "";
+}
+
+function parseStockQty(value) {
+  if (isBlankValue(value)) {
+    return null;
+  }
+  return Math.max(0, parseNumber(value, 0));
+}
+
 function parseBoolean(value, fallback) {
-  if (value === "" || value === null || typeof value === "undefined") {
+  if (isBlankValue(value)) {
     return fallback;
   }
   if (typeof value === "boolean") {
@@ -188,15 +199,18 @@ function buildCatalogFromProductsSheet() {
     ).trim();
     const variantName = String(row[idx.variantname] || "").trim();
 
+    const stockQty = parseStockQty(row[idx.stockqty]);
+    const tracksStock = stockQty !== null;
+
     const variant = {
       variantId: variantId,
       name: variantName,
       color: color,
       size: size,
       price: parseNumber(row[idx.price], 0),
-      stockQty: parseNumber(row[idx.stockqty], 0),
+      stockQty: stockQty,
       active: parseBoolean(row[idx.active], true),
-      trackStock: parseBoolean(row[idx.trackstock], false),
+      trackStock: tracksStock,
       allowBackorder: parseBoolean(row[idx.allowbackorder], false),
       image: variantImage,
     };
@@ -310,7 +324,20 @@ function deductStockFromProductsSheet(items) {
         continue;
       }
 
-      const previousStock = parseNumber(row[idx.stockqty], 0);
+      const previousStock = parseStockQty(row[idx.stockqty]);
+      if (previousStock === null) {
+        seen[key] = true;
+        updated.push({
+          variantId: variantId,
+          requestedQty: requestedQty,
+          deductedQty: 0,
+          previousStock: null,
+          stockQty: null,
+          trackStock: false,
+        });
+        continue;
+      }
+
       const newStock = Math.max(0, previousStock - requestedQty);
       const deductedQty = previousStock - newStock;
 
@@ -325,6 +352,7 @@ function deductStockFromProductsSheet(items) {
         deductedQty: deductedQty,
         previousStock: previousStock,
         stockQty: newStock,
+        trackStock: true,
       });
     }
 
@@ -401,7 +429,8 @@ function getLegacyItemsFromProducts(products) {
         name: labelParts.join(" - "),
         price: parseNumber(variant.price, 0),
         image: variant.image || product.image || "",
-        stockQty: parseNumber(variant.stockQty, 0),
+        stockQty: variant.trackStock ? parseNumber(variant.stockQty, 0) : null,
+        trackStock: Boolean(variant.trackStock),
       });
     });
   });
@@ -417,7 +446,8 @@ function getLegacyItemsFromFormData(formData) {
       name: item[1].split(";$")[0].replace("item-", ""),
       price: parseNumber(item[1].split(";$")[1], 0),
       image: item[2],
-      stockQty: 0,
+      stockQty: null,
+      trackStock: false,
     }));
 }
 

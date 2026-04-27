@@ -39,9 +39,9 @@ const MainPage = () => {
               color: '',
               size: '',
               price: Number(item.price || 0),
-              stockQty: Number(item.stockQty || 0),
+              stockQty: item.stockQty === null || typeof item.stockQty === "undefined" ? null : Number(item.stockQty || 0),
               active: true,
-              trackStock: false,
+              trackStock: Boolean(item.trackStock),
               allowBackorder: false,
             },
           ],
@@ -76,13 +76,19 @@ const MainPage = () => {
         }
         seenVariantIds.add(variantId);
 
+        const tracksStock = Boolean(variant.trackStock);
+        const stockQty = tracksStock
+          ? Math.max(
+              0,
+              Number(variant.stockQty || 0) - Number(stockDeductions[variantId] || 0)
+            )
+          : null;
+
         return {
           ...variant,
           variantId,
-          stockQty: Math.max(
-            0,
-            Number(variant.stockQty || 0) - Number(stockDeductions[variantId] || 0)
-          ),
+          stockQty,
+          trackStock: tracksStock,
         };
       });
 
@@ -201,14 +207,17 @@ const MainPage = () => {
         variantLabel,
         price: Number(variant.price || 0),
         quantity,
-        stockQty: Number(variant.stockQty || 0),
+        stockQty: variant.trackStock ? Number(variant.stockQty || 0) : null,
+        trackStock: Boolean(variant.trackStock),
       };
     })
     .filter(Boolean);
 
   const handleQuantityChange = (variantId, newQuantity) => {
     const variant = variantIndex[variantId];
-    const maxQuantity = variant ? Math.max(0, Number(variant.stockQty || 0)) : 0;
+    const maxQuantity = variant && variant.trackStock
+      ? Math.max(0, Number(variant.stockQty || 0))
+      : Infinity;
     setCart(prev => ({
       ...prev,
       [variantId]: Math.min(maxQuantity, Math.max(0, Number(newQuantity) || 0))
@@ -260,7 +269,8 @@ const MainPage = () => {
       const next = { ...prev };
       soldItems.forEach((item) => {
         const soldQty = Math.max(0, Number(item.quantity) || 0);
-        if (item.variantId && soldQty > 0) {
+        const variant = variantIndex[item.variantId];
+        if (variant?.trackStock && item.variantId && soldQty > 0) {
           next[item.variantId] = Number(next[item.variantId] || 0) + soldQty;
         }
       });

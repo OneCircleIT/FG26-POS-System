@@ -26,13 +26,14 @@ const Item = ({
   }
   const hasVariantAttributes = variants.some((variant) => variant.color || variant.size);
   const showVariantSelector = variants.length > 1 && hasVariantAttributes;
-  const stockQty = Math.max(0, Number(selectedVariant.stockQty || 0));
-  const isOutOfStock = stockQty <= 0;
+  const trackStock = Boolean(selectedVariant.trackStock);
+  const stockQty = trackStock ? Math.max(0, Number(selectedVariant.stockQty || 0)) : Infinity;
+  const isOutOfStock = trackStock && stockQty <= 0;
   const displayImage = selectedVariant.image || product.image;
   const displayName = selectedVariant.name || product.name;
 
   const handleIncrement = () => {
-    if (quantity >= stockQty) {
+    if (trackStock && quantity >= stockQty) {
       return;
     }
     onQuantityChange(selectedVariant.variantId, quantity + 1);
@@ -45,11 +46,11 @@ const Item = ({
   };
 
   const handleDirectQuantityChange = (newQuantity) => {
-    onQuantityChange(selectedVariant.variantId, Math.min(newQuantity, stockQty));
+    onQuantityChange(selectedVariant.variantId, trackStock ? Math.min(newQuantity, stockQty) : newQuantity);
   };
 
   const handleImageClick = () => {
-    if (quantity >= stockQty) {
+    if (trackStock && quantity >= stockQty) {
       return;
     }
     onQuantityChange(selectedVariant.variantId, quantity + 1);
@@ -85,14 +86,16 @@ const Item = ({
           </select>
         )}
         <p className="text-xs font-bold text-gray-400 m-0">${Number(selectedVariant.price || 0).toFixed(2)}</p>
-        <p className={`text-[10px] m-0 ${isOutOfStock ? "text-red-600 font-semibold" : "text-gray-500"}`}>
-          {isOutOfStock ? "Out of stock" : `In stock: ${stockQty}`}
-        </p>
+        {trackStock && (
+          <p className={`text-[10px] m-0 ${isOutOfStock ? "text-red-600 font-semibold" : "text-gray-500"}`}>
+            {isOutOfStock ? "Out of stock" : `In stock: ${stockQty}`}
+          </p>
+        )}
       </div>
       <div className="p-0">
         <QuantityInput
           quantity={quantity}
-          maxQuantity={stockQty}
+          maxQuantity={trackStock ? stockQty : Infinity}
           onIncrement={handleIncrement}
           onDecrement={handleDecrement}
           onQuantityChange={handleDirectQuantityChange}

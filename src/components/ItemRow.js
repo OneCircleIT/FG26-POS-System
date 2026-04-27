@@ -26,11 +26,12 @@ const ItemRow = ({
   }
   const hasVariantAttributes = variants.some((variant) => variant.color || variant.size);
   const showVariantSelector = variants.length > 1 && hasVariantAttributes;
-  const stockQty = Math.max(0, Number(selectedVariant.stockQty || 0));
-  const isOutOfStock = stockQty <= 0;
+  const trackStock = Boolean(selectedVariant.trackStock);
+  const stockQty = trackStock ? Math.max(0, Number(selectedVariant.stockQty || 0)) : Infinity;
+  const isOutOfStock = trackStock && stockQty <= 0;
 
   const handleIncrement = () => {
-    if (quantity >= stockQty) {
+    if (trackStock && quantity >= stockQty) {
       return;
     }
     onQuantityChange(selectedVariant.variantId, quantity + 1);
@@ -43,7 +44,7 @@ const ItemRow = ({
   };
 
   const handleDirectQuantityChange = (newQuantity) => {
-    onQuantityChange(selectedVariant.variantId, Math.min(newQuantity, stockQty));
+    onQuantityChange(selectedVariant.variantId, trackStock ? Math.min(newQuantity, stockQty) : newQuantity);
   };
 
   return (
@@ -69,15 +70,17 @@ const ItemRow = ({
             </select>
           )}
           <div className="text-gray-400 ml-2">${Number(selectedVariant.price || 0).toFixed(2)}</div>
-          <div className={`text-[10px] ${isOutOfStock ? "text-red-600 font-semibold" : "text-gray-500"}`}>
-            {isOutOfStock ? "Out of stock" : `Stock: ${stockQty}`}
-          </div>
+          {trackStock && (
+            <div className={`text-[10px] ${isOutOfStock ? "text-red-600 font-semibold" : "text-gray-500"}`}>
+              {isOutOfStock ? "Out of stock" : `Stock: ${stockQty}`}
+            </div>
+          )}
         </div>
       </td>
       <td className="px-1 py-2">
         <QuantityInput
           quantity={quantity}
-          maxQuantity={stockQty}
+          maxQuantity={trackStock ? stockQty : Infinity}
           onIncrement={handleIncrement}
           onDecrement={handleDecrement}
           onQuantityChange={handleDirectQuantityChange}
