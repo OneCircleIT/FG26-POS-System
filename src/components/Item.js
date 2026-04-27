@@ -26,11 +26,15 @@ const Item = ({
   }
   const hasVariantAttributes = variants.some((variant) => variant.color || variant.size);
   const showVariantSelector = variants.length > 1 && hasVariantAttributes;
-  const showStockBadge = Number(selectedVariant.stockQty || 0) > 0;
+  const stockQty = Math.max(0, Number(selectedVariant.stockQty || 0));
+  const isOutOfStock = stockQty <= 0;
   const displayImage = selectedVariant.image || product.image;
   const displayName = selectedVariant.name || product.name;
 
   const handleIncrement = () => {
+    if (quantity >= stockQty) {
+      return;
+    }
     onQuantityChange(selectedVariant.variantId, quantity + 1);
   };
 
@@ -41,10 +45,13 @@ const Item = ({
   };
 
   const handleDirectQuantityChange = (newQuantity) => {
-    onQuantityChange(selectedVariant.variantId, newQuantity);
+    onQuantityChange(selectedVariant.variantId, Math.min(newQuantity, stockQty));
   };
 
   const handleImageClick = () => {
+    if (quantity >= stockQty) {
+      return;
+    }
     onQuantityChange(selectedVariant.variantId, quantity + 1);
   };
 
@@ -59,7 +66,7 @@ const Item = ({
           onClick={handleImageClick}
           src={displayImage}
           alt={displayName}
-          className="w-full h-full object-cover cursor-pointer"
+          className={`w-full h-full object-cover ${isOutOfStock ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
         />
       </div>
       <div className="p-1 flex-1 flex flex-col justify-between">
@@ -78,15 +85,14 @@ const Item = ({
           </select>
         )}
         <p className="text-xs font-bold text-gray-400 m-0">${Number(selectedVariant.price || 0).toFixed(2)}</p>
-        {showStockBadge && (
-          <p className="text-[10px] text-gray-500 m-0">
-            In stock: {Number(selectedVariant.stockQty || 0)}
-          </p>
-        )}
+        <p className={`text-[10px] m-0 ${isOutOfStock ? "text-red-600 font-semibold" : "text-gray-500"}`}>
+          {isOutOfStock ? "Out of stock" : `In stock: ${stockQty}`}
+        </p>
       </div>
       <div className="p-0">
         <QuantityInput
           quantity={quantity}
+          maxQuantity={stockQty}
           onIncrement={handleIncrement}
           onDecrement={handleDecrement}
           onQuantityChange={handleDirectQuantityChange}

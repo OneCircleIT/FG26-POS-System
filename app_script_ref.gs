@@ -381,7 +381,8 @@ function deductStockOnFormSubmit(e) {
 }
 
 function onFormSubmit(e) {
-  deductStockOnFormSubmit(e);
+  // Stock is deducted by the web app's explicit deductStock API call after checkout succeeds.
+  // Keep this empty to avoid double deduction if an old form-submit trigger is still installed.
 }
 
 function getLegacyItemsFromProducts(products) {

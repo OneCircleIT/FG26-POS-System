@@ -9,6 +9,7 @@ const CheckoutPopup = ({
   itemCount,
   cartItems = [],
   onClearContents,
+  isClearing = false,
   invoiceEmail: initialInvoiceEmail = "",
   onInvoiceEmailChange,
 }) => {
@@ -189,9 +190,10 @@ const CheckoutPopup = ({
           <button
             className="btn-primary"
             onClick={onClearContents}
+            disabled={isClearing}
             autoFocus
           >
-            Clear and Continue to next order
+            {isClearing ? "Updating stock..." : "Clear and Continue to next order"}
           </button>
           <button
             className="btn-primary-outline"

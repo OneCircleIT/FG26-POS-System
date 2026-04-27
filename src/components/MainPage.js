@@ -9,7 +9,7 @@ import { loginSuccess, logout } from "../store/authSlice";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch } from '../store/hooks';
 import CheckoutPopup from "./CheckoutPopup";
-import { requestCatalog } from "../utils/appScriptClient";
+import { deductStock, requestCatalog } from "../utils/appScriptClient";
 
 const MainPage = () => {
   const [cart, setCart] = useState({});
@@ -207,9 +207,11 @@ const MainPage = () => {
     .filter(Boolean);
 
   const handleQuantityChange = (variantId, newQuantity) => {
+    const variant = variantIndex[variantId];
+    const maxQuantity = variant ? Math.max(0, Number(variant.stockQty || 0)) : 0;
     setCart(prev => ({
       ...prev,
-      [variantId]: Math.max(0, Number(newQuantity) || 0)
+      [variantId]: Math.min(maxQuantity, Math.max(0, Number(newQuantity) || 0))
     }));
   };
 
@@ -237,12 +239,29 @@ const MainPage = () => {
   };
 
   const onClearContents = async () => {
+    const soldItems = cartItems.map((item) => ({
+      variantId: item.variantId,
+      quantity: item.quantity,
+    }));
+
+    setIsSubmitting(true);
+    try {
+      const result = await deductStock(passcode, soldItems);
+      if (!result?.success) {
+        throw new Error(result?.error || "Unable to update stock in Products sheet.");
+      }
+    } catch (error) {
+      window.alert(error?.message || "Unable to update stock in Products sheet.");
+      setIsSubmitting(false);
+      return false;
+    }
+
     setStockDeductions((prev) => {
       const next = { ...prev };
-      Object.entries(cart).forEach(([variantId, quantity]) => {
-        const soldQty = Math.max(0, Number(quantity) || 0);
-        if (soldQty > 0) {
-          next[variantId] = Number(next[variantId] || 0) + soldQty;
+      soldItems.forEach((item) => {
+        const soldQty = Math.max(0, Number(item.quantity) || 0);
+        if (item.variantId && soldQty > 0) {
+          next[item.variantId] = Number(next[item.variantId] || 0) + soldQty;
         }
       });
       return next;
@@ -251,6 +270,7 @@ const MainPage = () => {
     setShowCheckoutPopUp(false);
     setCart({});
     setInvoiceEmail('');
+    setIsSubmitting(false);
     return true;
   };
 
@@ -356,6 +376,7 @@ const MainPage = () => {
         itemCount={itemCount}
         cartItems={cartItems}
         onClearContents={onClearContents}
+        isClearing={isSubmitting}
         invoiceEmail={invoiceEmail}
         onInvoiceEmailChange={setInvoiceEmail}
       />

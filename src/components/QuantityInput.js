@@ -1,10 +1,17 @@
 import React, { useState } from "react";
 
-const QuantityInput = ({ quantity, onIncrement, onDecrement, onQuantityChange }) => {
+const QuantityInput = ({ quantity, maxQuantity = Infinity, onIncrement, onDecrement, onQuantityChange }) => {
   const [showPopup, setShowPopup] = useState(false);
   const [inputValue, setInputValue] = useState(quantity.toString());
+  const hasMaxQuantity = Number.isFinite(maxQuantity);
+  const sanitizedMaxQuantity = hasMaxQuantity ? Math.max(0, Number(maxQuantity) || 0) : Infinity;
+  const isAtMaxQuantity = quantity >= sanitizedMaxQuantity;
+  const isQuantityEditable = sanitizedMaxQuantity > 0;
 
   const handleQuantityClick = () => {
+    if (!isQuantityEditable) {
+      return;
+    }
     setInputValue(quantity.toString());
     setShowPopup(true);
   };
@@ -13,7 +20,7 @@ const QuantityInput = ({ quantity, onIncrement, onDecrement, onQuantityChange })
     e.preventDefault();
     const newQuantity = parseInt(inputValue);
     if (!isNaN(newQuantity) && newQuantity >= 0) {
-      onQuantityChange(newQuantity);
+      onQuantityChange(Math.min(newQuantity, sanitizedMaxQuantity));
       setShowPopup(false);
     }
   };
@@ -48,15 +55,18 @@ const QuantityInput = ({ quantity, onIncrement, onDecrement, onQuantityChange })
           -
         </button>
         <span
-          className="px-1 py-1 bg-white border-0 text-gray-800 font-semibold cursor-pointer select-none hover:bg-blue-50 transition text-center w-full"
+          className={`px-1 py-1 bg-white border-0 text-gray-800 font-semibold select-none transition text-center w-full ${
+            isQuantityEditable ? "cursor-pointer hover:bg-blue-50" : "cursor-not-allowed opacity-50"
+          }`}
           onClick={handleQuantityClick}
-          title="Click to edit quantity"
+          title={isQuantityEditable ? "Click to edit quantity" : "Out of stock"}
         >
           {quantity}
         </span>
         <button
-          className={`px-2 py-1 border-0 bg-green-300 text-gray-700 font-semibold hover:bg-gray-300 transition w-[36px]`}
+          className="px-2 py-1 border-0 bg-green-300 text-gray-700 font-semibold hover:bg-gray-300 transition disabled:opacity-50 w-[36px]"
           onClick={onIncrement}
+          disabled={isAtMaxQuantity}
           aria-label="Increase quantity"
           type="button"
         >
@@ -81,6 +91,7 @@ const QuantityInput = ({ quantity, onIncrement, onDecrement, onQuantityChange })
                 onChange={handleInputChange}
                 onKeyDown={handleKeyPress}
                 min="0"
+                max={hasMaxQuantity ? sanitizedMaxQuantity : undefined}
                 autoFocus
                 className="w-full px-3 py-2 border border-gray-300  focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 text-gray-800 mb-4"
               />
