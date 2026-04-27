@@ -13,6 +13,7 @@ import { requestCatalog } from "../utils/appScriptClient";
 
 const MainPage = () => {
   const [cart, setCart] = useState({});
+  const [stockDeductions, setStockDeductions] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'table'
   const { staffName, items, products, passcode } = useAppSelector((state) => state.auth);
@@ -78,6 +79,10 @@ const MainPage = () => {
         return {
           ...variant,
           variantId,
+          stockQty: Math.max(
+            0,
+            Number(variant.stockQty || 0) - Number(stockDeductions[variantId] || 0)
+          ),
         };
       });
 
@@ -87,7 +92,7 @@ const MainPage = () => {
         variants,
       };
     });
-  }, [products, items]);
+  }, [products, items, stockDeductions]);
 
   const [selectedVariantByProduct, setSelectedVariantByProduct] = useState({});
 
@@ -231,7 +236,17 @@ const MainPage = () => {
     setShowEmailPopup(false);
   };
 
-  const onClearContents = async ({email, paymentMethod, remarks}) => {
+  const onClearContents = async () => {
+    setStockDeductions((prev) => {
+      const next = { ...prev };
+      Object.entries(cart).forEach(([variantId, quantity]) => {
+        const soldQty = Math.max(0, Number(quantity) || 0);
+        if (soldQty > 0) {
+          next[variantId] = Number(next[variantId] || 0) + soldQty;
+        }
+      });
+      return next;
+    });
     // Reset cart
     setShowCheckoutPopUp(false);
     setCart({});

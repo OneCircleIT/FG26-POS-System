@@ -10,11 +10,11 @@ const parseResponseText = (text) => {
   }
 };
 
-const fetchViaPost = async (passcode) => {
+const fetchViaPost = async (payload) => {
   const response = await fetch(API, {
     redirect: "follow",
     method: "POST",
-    body: JSON.stringify({ passcode }),
+    body: JSON.stringify(payload),
     headers: {
       "Content-Type": "text/plain;charset=utf-8",
     },
@@ -67,8 +67,16 @@ const fetchViaJsonp = (passcode) => {
 
 export const requestCatalog = async (passcode) => {
   try {
-    return await fetchViaPost(passcode);
+    return await fetchViaPost({ passcode });
   } catch (postError) {
     return fetchViaJsonp(passcode);
   }
+};
+
+export const deductStock = async (passcode, items) => {
+  return fetchViaPost({
+    action: "deductStock",
+    passcode,
+    items,
+  });
 };
