@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "https://onecircleit.github.io/FG26-POS-System/static/css/main.97812897.css",
-    "main.js": "https://onecircleit.github.io/FG26-POS-System/static/js/main.1e7e8347.js",
+    "main.js": "https://onecircleit.github.io/FG26-POS-System/static/js/main.d3ec275a.js",
     "static/js/488.ea624d26.chunk.js": "https://onecircleit.github.io/FG26-POS-System/static/js/488.ea624d26.chunk.js",
     "index.html": "https://onecircleit.github.io/FG26-POS-System/index.html",
     "main.97812897.css.map": "https://onecircleit.github.io/FG26-POS-System/static/css/main.97812897.css.map",
-    "main.1e7e8347.js.map": "https://onecircleit.github.io/FG26-POS-System/static/js/main.1e7e8347.js.map",
+    "main.d3ec275a.js.map": "https://onecircleit.github.io/FG26-POS-System/static/js/main.d3ec275a.js.map",
     "488.ea624d26.chunk.js.map": "https://onecircleit.github.io/FG26-POS-System/static/js/488.ea624d26.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.97812897.css",
-    "static/js/main.1e7e8347.js"
+    "static/js/main.d3ec275a.js"
   ]
 }
