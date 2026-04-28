@@ -29,6 +29,7 @@ const ItemRow = ({
   const trackStock = Boolean(selectedVariant.trackStock);
   const stockQty = trackStock ? Math.max(0, Number(selectedVariant.stockQty || 0)) : Infinity;
   const isOutOfStock = trackStock && stockQty <= 0;
+  const displayName = selectedVariant.name || product.name;
 
   const handleIncrement = () => {
     if (trackStock && quantity >= stockQty) {
@@ -54,7 +55,7 @@ const ItemRow = ({
       }`}
     >
       <td className="px-1 py-2">
-        <div className="font-bold">{product.name}</div>
+        <div className="font-bold">{displayName}</div>
         <div className="flex items-center gap-2 mt-1">
           {showVariantSelector && (
             <select
